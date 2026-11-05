@@ -37,9 +37,21 @@ jobs:
       - name: Build JupyterLite
         run: jupyter lite build --contents _content --output-dir dist
 
-      - name: Add landing page
-        # Η αρχική σελίδα ανοίγει κατευθείαν το notebook.
-        run: cp landing/index.html dist/index.html
+      - name: Redirect the site root to the notebook
+        # Προσοχή: ΔΕΝ αντικαθιστούμε το dist/index.html. Το JupyterLite διαβάζει τις
+        # ρυθμίσεις του από εκεί. Προσθέτουμε μόνο μια ανακατεύθυνση μέσα στο <head>.
+        # Αν αλλάξεις το όνομα του notebook, άλλαξέ το και εδώ.
+        run: |
+          python - <<'EOF'
+          import pathlib, re
+          p = pathlib.Path("dist/index.html")
+          html = p.read_text(encoding="utf-8")
+          redirect = '<meta http-equiv="refresh" content="0; url=notebooks/index.html?path=Elafia_Colab__gia_parousiasi.ipynb">'
+          new = re.sub(r"(<head[^>]*>)", lambda m: m.group(1) + redirect, html, count=1, flags=re.I)
+          assert new != html, "Δεν βρέθηκε <head> στο dist/index.html"
+          assert "jupyter-config-data" in new, "Λείπουν οι ρυθμίσεις του JupyterLite από το dist/index.html"
+          p.write_text(new, encoding="utf-8")
+          EOF
 
       - uses: actions/configure-pages@v5
 
