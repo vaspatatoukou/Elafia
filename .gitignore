@@ -1,0 +1,4 @@
+_content/
+dist/
+_output/
+.jupyterlite.doit.db
